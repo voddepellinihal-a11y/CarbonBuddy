@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/carbonbuddy
+    username: carbonbuddy
+    password: carbonbuddy_secret
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+app:
+  jwt:
+    secret: "aGVsbG9fdGhpcyBpcyBhIHZlcnkgc2VjdXJlIGtleSBmb3IgY2FyYm9uYnVkZHkgand0IHRva2VucyBwbGVhc2UgZG9udCBzaGFyZQ=="
+    expiration-ms: 86400000
+
+ocr:
+  service-url: http://ocr-service:5000
+
+nudge:
+  service-url: http://nudge-engine:5001
+
+logging:
+  level:
+    com.carbonbuddy: INFO
