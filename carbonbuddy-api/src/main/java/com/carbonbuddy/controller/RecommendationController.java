@@ -1,6 +1,7 @@
 package com.carbonbuddy.controller;
 
 import com.carbonbuddy.model.Recommendation;
+import com.carbonbuddy.security.SecurityUtil;
 import com.carbonbuddy.service.RecommendationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,13 +22,13 @@ public class RecommendationController {
 
     @GetMapping
     public ResponseEntity<List<Recommendation>> getRecommendations(Authentication auth) {
-        Long userId = (Long) auth.getPrincipal();
+        Long userId = SecurityUtil.getCurrentUserId(auth);
         return ResponseEntity.ok(recommendationService.getUserRecommendations(userId));
     }
 
     @PostMapping("/generate")
     public ResponseEntity<Void> generateRecommendations(Authentication auth) {
-        Long userId = (Long) auth.getPrincipal();
+        Long userId = SecurityUtil.getCurrentUserId(auth);
         recommendationService.generateRecommendations(userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -35,7 +36,7 @@ public class RecommendationController {
     @PostMapping("/{id}/complete")
     public ResponseEntity<Recommendation> completeRecommendation(
             Authentication auth, @PathVariable Long id) {
-        Long userId = (Long) auth.getPrincipal();
+        Long userId = SecurityUtil.getCurrentUserId(auth);
         Recommendation rec = recommendationService.completeRecommendation(userId, id);
         return ResponseEntity.ok(rec);
     }

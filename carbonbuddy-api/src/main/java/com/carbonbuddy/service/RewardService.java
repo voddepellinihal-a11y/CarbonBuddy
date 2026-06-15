@@ -1,5 +1,6 @@
 package com.carbonbuddy.service;
 
+import com.carbonbuddy.dto.StoreItem;
 import com.carbonbuddy.model.Reward;
 import com.carbonbuddy.model.User;
 import com.carbonbuddy.repository.RewardRepository;
@@ -10,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class RewardService {
@@ -126,5 +129,94 @@ public class RewardService {
 
         userRepository.save(user);
         return user.getCurrentStreak();
+    }
+
+    private static final List<StoreItem> STORE_ITEMS = List.of(
+        new StoreItem(1, "Eco Tote Bag", "Reusable organic cotton tote for guilt-free shopping", 100, "🛍️"),
+        new StoreItem(2, "Bamboo Toothbrush Set", "Pack of 4 biodegradable bamboo toothbrushes", 50, "🧴"),
+        new StoreItem(3, "Free Bike Share Pass", "30-minute city bike share ride — zero emissions!", 200, "🚲"),
+        new StoreItem(4, "Reusable Coffee Cup", "Keep your coffee hot and planet cool — 200+ uses", 150, "☕"),
+        new StoreItem(5, "Plant a Tree Certificate", "We'll plant a native tree in your name 🌱", 300, "🌳"),
+        new StoreItem(6, "Metro Pass Discount", "₹50 off your next monthly metro pass recharge", 500, "🎟️"),
+        new StoreItem(7, "Carbon Offset Hero Badge", "Exclusive profile badge + 5x streak boost for 1 week", 1000, "♻️")
+    );
+
+    private static final String COUPON_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+    public List<StoreItem> getStoreItems(Long userId) {
+        int balance = rewardRepository.getBalanceByUserId(userId);
+        return STORE_ITEMS.stream().map(item -> {
+            StoreItem copy = new StoreItem(item.getId(), item.getName(), item.getDescription(), item.getCost(), item.getIcon());
+            copy.setAffordable(item.getCost() <= balance);
+            return copy;
+        }).collect(Collectors.toList());
+    }
+
+    public int getStoreBalance(Long userId) {
+        return rewardRepository.getBalanceByUserId(userId);
+    }
+
+    @Transactional
+    public Map<String, Object> redeemItem(Long userId, int itemId) {
+        StoreItem item = STORE_ITEMS.stream()
+                .filter(i -> i.getId() == itemId)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Invalid item: " + itemId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
+
+        int balance = rewardRepository.getBalanceByUserId(userId);
+        if (balance < item.getCost()) {
+            throw new IllegalArgumentException("Insufficient CarbonCoins");
+        }
+
+        user.setTotalPoints(user.getTotalPoints() - item.getCost());
+        userRepository.save(user);
+
+        Reward reward = new Reward();
+        reward.setUserId(userId);
+        reward.setCreditsSpent(item.getCost());
+        reward.setSource("STORE_REDEEM");
+        reward.setSourceId((long) itemId);
+        reward.setTransactionType("DEBIT");
+        rewardRepository.save(reward);
+
+        int newBalance = rewardRepository.getBalanceByUserId(userId);
+        String redemptionCode = generateCode(itemId, userId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("success", true);
+        result.put("item", item.getName());
+        result.put("icon", item.getIcon());
+        result.put("cost", item.getCost());
+        result.put("newBalance", newBalance);
+        result.put("redemptionCode", redemptionCode);
+        return result;
+    }
+
+    public List<Map<String, Object>> getRedemptionHistory(Long userId) {
+        List<Reward> redemptions = rewardRepository.findByUserIdAndTransactionType(userId, "DEBIT");
+        return redemptions.stream().map(r -> {
+            String itemName = STORE_ITEMS.stream()
+                    .filter(i -> i.getId() == (r.getSourceId() != null ? r.getSourceId().intValue() : 0))
+                    .findFirst().map(i -> i.getName() + " " + i.getIcon()).orElse("Unknown item");
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("id", r.getId());
+            entry.put("points", r.getCreditsSpent());
+            entry.put("item", itemName);
+            entry.put("date", r.getCreatedAt() != null ? r.getCreatedAt().toString() : "");
+            return entry;
+        }).collect(Collectors.toList());
+    }
+
+    private String generateCode(int itemId, Long userId) {
+        Random rnd = new Random();
+        StringBuilder code = new StringBuilder("CB-");
+        for (int i = 0; i < 8; i++) {
+            code.append(COUPON_CHARS.charAt(rnd.nextInt(COUPON_CHARS.length())));
+        }
+        code.append("-").append(String.format("%04d", userId % 10000));
+        return code.toString();
     }
 }

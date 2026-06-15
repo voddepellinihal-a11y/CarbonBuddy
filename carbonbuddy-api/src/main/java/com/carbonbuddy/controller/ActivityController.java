@@ -2,6 +2,7 @@ package com.carbonbuddy.controller;
 
 import com.carbonbuddy.dto.request.ActivityRequest;
 import com.carbonbuddy.model.Activity;
+import com.carbonbuddy.security.SecurityUtil;
 import com.carbonbuddy.service.ActivityService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class ActivityController {
     public ResponseEntity<Activity> createActivity(
             Authentication auth,
             @Valid @RequestBody ActivityRequest request) {
-        Long userId = (Long) auth.getPrincipal();
+        Long userId = SecurityUtil.getCurrentUserId(auth);
         Activity activity = activityService.createActivity(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(activity);
     }

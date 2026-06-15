@@ -1,6 +1,8 @@
 package com.carbonbuddy.dto.request;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -15,6 +17,8 @@ public class RegisterRequest {
     @NotBlank @Size(max = 100)
     private String name;
 
+    @Min(value = 1, message = "Age must be at least 1")
+    @Max(value = 150, message = "Age must not exceed 150")
     private Integer age;
 
     @Size(max = 100)

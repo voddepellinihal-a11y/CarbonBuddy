@@ -34,7 +34,7 @@ public class ActivityService {
         activity.setRoutePolyline(request.getRoutePolyline());
         activity.setActivityStart(request.getActivityStart());
         activity.setActivityEnd(request.getActivityEnd());
-        activity.setIsManual(request.getIsManual());
+        activity.setIsManual(request.isManual());
 
         activity = activityRepository.save(activity);
 

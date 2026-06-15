@@ -6,11 +6,17 @@ import com.carbonbuddy.dto.response.AuthResponse;
 import com.carbonbuddy.model.User;
 import com.carbonbuddy.repository.UserRepository;
 import com.carbonbuddy.security.JwtTokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
+    private static final String AUTH_FAILED = "Invalid email or password";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -26,7 +32,8 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already registered");
+            log.warn("Registration attempt with existing email: {}", request.getEmail());
+            throw new IllegalArgumentException(AUTH_FAILED);
         }
 
         User user = new User();
@@ -45,10 +52,14 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+                .orElseThrow(() -> {
+                    log.warn("Login attempt for unknown email: {}", request.getEmail());
+                    return new IllegalArgumentException(AUTH_FAILED);
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            log.warn("Invalid password attempt for email: {}", request.getEmail());
+            throw new IllegalArgumentException(AUTH_FAILED);
         }
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail());

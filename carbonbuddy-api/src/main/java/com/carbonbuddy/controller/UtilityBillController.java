@@ -2,6 +2,7 @@ package com.carbonbuddy.controller;
 
 import com.carbonbuddy.dto.request.UtilityBillRequest;
 import com.carbonbuddy.model.UtilityBill;
+import com.carbonbuddy.security.SecurityUtil;
 import com.carbonbuddy.service.UtilityBillService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class UtilityBillController {
     public ResponseEntity<UtilityBill> createUtilityBill(
             Authentication auth,
             @Valid @RequestBody UtilityBillRequest request) {
-        Long userId = (Long) auth.getPrincipal();
+        Long userId = SecurityUtil.getCurrentUserId(auth);
         UtilityBill bill = utilityBillService.createUtilityBill(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(bill);
     }

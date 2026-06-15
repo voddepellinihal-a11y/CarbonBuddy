@@ -1,13 +1,16 @@
 package com.carbonbuddy.dto.request;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 
 public class ActivityRequest {
 
+    @Positive(message = "Distance must be positive")
     @NotNull
     private Double distanceKm;
 
+    @Positive(message = "Duration must be positive")
     private Double durationMinutes;
 
     @NotNull
@@ -20,7 +23,7 @@ public class ActivityRequest {
 
     private LocalDateTime activityEnd;
 
-    private Boolean isManual = true;
+    private boolean isManual = true;
 
     public Double getDistanceKm() { return distanceKm; }
     public void setDistanceKm(Double distanceKm) { this.distanceKm = distanceKm; }
@@ -34,6 +37,6 @@ public class ActivityRequest {
     public void setActivityStart(LocalDateTime activityStart) { this.activityStart = activityStart; }
     public LocalDateTime getActivityEnd() { return activityEnd; }
     public void setActivityEnd(LocalDateTime activityEnd) { this.activityEnd = activityEnd; }
-    public Boolean getIsManual() { return isManual; }
-    public void setIsManual(Boolean isManual) { this.isManual = isManual; }
+    public boolean isManual() { return isManual; }
+    public void setManual(boolean isManual) { this.isManual = isManual; }
 }

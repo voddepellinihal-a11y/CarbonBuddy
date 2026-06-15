@@ -1,6 +1,7 @@
 package com.carbonbuddy.controller;
 
 import com.carbonbuddy.dto.response.DashboardResponse;
+import com.carbonbuddy.security.SecurityUtil;
 import com.carbonbuddy.service.AnalyticsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,7 +19,7 @@ public class AnalyticsController {
 
     @GetMapping("/dashboard")
     public ResponseEntity<DashboardResponse> getDashboard(Authentication auth) {
-        Long userId = (Long) auth.getPrincipal();
+        Long userId = SecurityUtil.getCurrentUserId(auth);
         DashboardResponse dashboard = analyticsService.getDashboard(userId);
         return ResponseEntity.ok(dashboard);
     }
