@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
-            .addFilterBefore(headersFilter, JwtAuthenticationFilter.class)
+            .addFilterAfter(headersFilter, org.springframework.security.web.context.SecurityContextHolderFilter.class)
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
