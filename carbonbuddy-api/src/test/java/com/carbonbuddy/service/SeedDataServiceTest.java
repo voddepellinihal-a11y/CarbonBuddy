@@ -9,8 +9,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,27 +56,38 @@ class SeedDataServiceTest {
                 passwordEncoder, carbonEngine, recommendationService);
     }
 
-    @Test
-    void should_createFourUsers_when_dataNotYetSeeded() {
-        when(userRepository.count()).thenReturn(0L);
+    private void setupCommonMocks() {
         when(passwordEncoder.encode(any())).thenReturn("encoded");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User u = i.getArgument(0);
-            u.setId(1L);
-            return u;
+        when(userRepository.saveAll(anyList())).thenAnswer(i -> {
+            List<User> input = new ArrayList<>(i.getArgument(0));
+            for (int idx = 0; idx < input.size(); idx++) {
+                input.get(idx).setId((long) (idx + 1));
+            }
+            return input;
         });
-        when(activityRepository.save(any(Activity.class))).thenAnswer(i -> i.getArgument(0));
+        when(activityRepository.saveAll(anyList())).thenAnswer(i -> {
+            List<Activity> input = new ArrayList<>(i.getArgument(0));
+            for (int idx = 0; idx < input.size(); idx++) {
+                input.get(idx).setId((long) (idx + 1));
+            }
+            return input;
+        });
         when(carbonEngine.computeTransportCarbon(anyLong(), any(), anyDouble(), any()))
                 .thenReturn(new CarbonRecord());
-        when(carbonRecordRepository.save(any(CarbonRecord.class))).thenAnswer(i -> i.getArgument(0));
+        when(carbonRecordRepository.saveAll(anyList())).thenAnswer(i -> i.getArgument(0));
         when(utilityBillRepository.save(any(UtilityBill.class))).thenAnswer(i -> i.getArgument(0));
         when(carbonEngine.computeUtilityCarbon(anyLong(), anyDouble(), anyInt(), any(), any()))
                 .thenReturn(new CarbonRecord());
+    }
+
+    @Test
+    void should_createFourUsers_when_dataNotYetSeeded() {
         when(userRepository.count()).thenReturn(0L, 4L);
+        setupCommonMocks();
 
         seedDataService.run();
 
-        verify(userRepository, times(4)).save(any(User.class));
+        verify(userRepository).saveAll(anyList());
     }
 
     @Test
@@ -83,26 +97,15 @@ class SeedDataServiceTest {
         seedDataService.run();
 
         verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).saveAll(anyList());
         verify(activityRepository, never()).save(any(Activity.class));
+        verify(activityRepository, never()).saveAll(anyList());
     }
 
     @Test
     void should_encodePasswords_when_creatingUsers() {
-        when(userRepository.count()).thenReturn(0L);
-        when(passwordEncoder.encode(any())).thenReturn("hashed-pw");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User u = i.getArgument(0);
-            u.setId(1L);
-            return u;
-        });
-        when(activityRepository.save(any(Activity.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeTransportCarbon(anyLong(), any(), anyDouble(), any()))
-                .thenReturn(new CarbonRecord());
-        when(carbonRecordRepository.save(any(CarbonRecord.class))).thenAnswer(i -> i.getArgument(0));
-        when(utilityBillRepository.save(any(UtilityBill.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeUtilityCarbon(anyLong(), anyDouble(), anyInt(), any(), any()))
-                .thenReturn(new CarbonRecord());
         when(userRepository.count()).thenReturn(0L, 4L);
+        setupCommonMocks();
 
         seedDataService.run();
 
@@ -111,44 +114,18 @@ class SeedDataServiceTest {
 
     @Test
     void should_createActivities_when_seedingRohan() {
-        when(userRepository.count()).thenReturn(0L);
-        when(passwordEncoder.encode(any())).thenReturn("encoded");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User u = i.getArgument(0);
-            u.setId(1L);
-            return u;
-        });
-        when(activityRepository.save(any(Activity.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeTransportCarbon(anyLong(), any(), anyDouble(), any()))
-                .thenReturn(new CarbonRecord());
-        when(carbonRecordRepository.save(any(CarbonRecord.class))).thenAnswer(i -> i.getArgument(0));
-        when(utilityBillRepository.save(any(UtilityBill.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeUtilityCarbon(anyLong(), anyDouble(), anyInt(), any(), any()))
-                .thenReturn(new CarbonRecord());
         when(userRepository.count()).thenReturn(0L, 4L);
+        setupCommonMocks();
 
         seedDataService.run();
 
-        verify(activityRepository, atLeast(4)).save(any(Activity.class));
+        verify(activityRepository, atLeastOnce()).saveAll(anyList());
     }
 
     @Test
     void should_computeCarbonRecords_when_seedingActivities() {
-        when(userRepository.count()).thenReturn(0L);
-        when(passwordEncoder.encode(any())).thenReturn("encoded");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User u = i.getArgument(0);
-            u.setId(1L);
-            return u;
-        });
-        when(activityRepository.save(any(Activity.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeTransportCarbon(anyLong(), any(), anyDouble(), any()))
-                .thenReturn(new CarbonRecord());
-        when(carbonRecordRepository.save(any(CarbonRecord.class))).thenAnswer(i -> i.getArgument(0));
-        when(utilityBillRepository.save(any(UtilityBill.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeUtilityCarbon(anyLong(), anyDouble(), anyInt(), any(), any()))
-                .thenReturn(new CarbonRecord());
         when(userRepository.count()).thenReturn(0L, 4L);
+        setupCommonMocks();
 
         seedDataService.run();
 
@@ -157,21 +134,8 @@ class SeedDataServiceTest {
 
     @Test
     void should_createUtilityBills_when_seedingData() {
-        when(userRepository.count()).thenReturn(0L);
-        when(passwordEncoder.encode(any())).thenReturn("encoded");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User u = i.getArgument(0);
-            u.setId(1L);
-            return u;
-        });
-        when(activityRepository.save(any(Activity.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeTransportCarbon(anyLong(), any(), anyDouble(), any()))
-                .thenReturn(new CarbonRecord());
-        when(carbonRecordRepository.save(any(CarbonRecord.class))).thenAnswer(i -> i.getArgument(0));
-        when(utilityBillRepository.save(any(UtilityBill.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeUtilityCarbon(anyLong(), anyDouble(), anyInt(), any(), any()))
-                .thenReturn(new CarbonRecord());
         when(userRepository.count()).thenReturn(0L, 4L);
+        setupCommonMocks();
 
         seedDataService.run();
 
@@ -180,21 +144,8 @@ class SeedDataServiceTest {
 
     @Test
     void should_generateRecommendations_when_seedingData() {
-        when(userRepository.count()).thenReturn(0L);
-        when(passwordEncoder.encode(any())).thenReturn("encoded");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User u = i.getArgument(0);
-            u.setId(1L);
-            return u;
-        });
-        when(activityRepository.save(any(Activity.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeTransportCarbon(anyLong(), any(), anyDouble(), any()))
-                .thenReturn(new CarbonRecord());
-        when(carbonRecordRepository.save(any(CarbonRecord.class))).thenAnswer(i -> i.getArgument(0));
-        when(utilityBillRepository.save(any(UtilityBill.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeUtilityCarbon(anyLong(), anyDouble(), anyInt(), any(), any()))
-                .thenReturn(new CarbonRecord());
         when(userRepository.count()).thenReturn(0L, 4L);
+        setupCommonMocks();
 
         seedDataService.run();
 
@@ -203,26 +154,22 @@ class SeedDataServiceTest {
 
     @Test
     void should_setDefaultTransitMode_when_creatingUsers() {
-        when(userRepository.count()).thenReturn(0L);
-        when(passwordEncoder.encode(any())).thenReturn("encoded");
-        User[] capturedUser = new User[1];
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User u = i.getArgument(0);
-            capturedUser[0] = u;
-            u.setId(1L);
-            return u;
-        });
-        when(activityRepository.save(any(Activity.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeTransportCarbon(anyLong(), any(), anyDouble(), any()))
-                .thenReturn(new CarbonRecord());
-        when(carbonRecordRepository.save(any(CarbonRecord.class))).thenAnswer(i -> i.getArgument(0));
-        when(utilityBillRepository.save(any(UtilityBill.class))).thenAnswer(i -> i.getArgument(0));
-        when(carbonEngine.computeUtilityCarbon(anyLong(), anyDouble(), anyInt(), any(), any()))
-                .thenReturn(new CarbonRecord());
         when(userRepository.count()).thenReturn(0L, 4L);
+        setupCommonMocks();
+
+        List<User> capturedUsers = new ArrayList<>();
+        when(userRepository.saveAll(anyList())).thenAnswer(i -> {
+            List<User> input = new ArrayList<>(i.getArgument(0));
+            for (int idx = 0; idx < input.size(); idx++) {
+                input.get(idx).setId((long) (idx + 1));
+                capturedUsers.add(input.get(idx));
+            }
+            return input;
+        });
 
         seedDataService.run();
 
-        assertNotNull(capturedUser[0].getDefaultTransitMode());
+        assertFalse(capturedUsers.isEmpty());
+        assertNotNull(capturedUsers.get(0).getDefaultTransitMode());
     }
 }

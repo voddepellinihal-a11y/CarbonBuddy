@@ -9,11 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Seeds the database with sample users, activities, utility bills,
- * carbon records, and recommendations on first startup.
- */
 @Component
 public class SeedDataService implements CommandLineRunner {
 
@@ -36,19 +34,6 @@ public class SeedDataService implements CommandLineRunner {
     private final CarbonComputationEngine carbonEngine;
     private final RecommendationService recommendationService;
 
-    /**
-     * Constructs SeedDataService with all required repositories and services.
-     *
-     * @param userRepository         the user repository
-     * @param activityRepository     the activity repository
-     * @param carbonRecordRepository the carbon record repository
-     * @param utilityBillRepository  the utility bill repository
-     * @param recommendationRepository the recommendation repository
-     * @param rewardRepository       the reward repository
-     * @param passwordEncoder        the password encoder
-     * @param carbonEngine           the carbon computation engine
-     * @param recommendationService  the recommendation service
-     */
     public SeedDataService(UserRepository userRepository,
                            ActivityRepository activityRepository,
                            CarbonRecordRepository carbonRecordRepository,
@@ -77,20 +62,27 @@ public class SeedDataService implements CommandLineRunner {
 
         log.info("Seeding database with sample data");
 
-        User rohan = createUser("rohan@hyderabad.college", "Rohan123!", "Rohan Sharma", 21, "Hyderabad", "METRO", 450, 5, 7);
-        User priya = createUser("priya@techcorp.com", "Priya123!", "Priya Singh", 24, "Hyderabad", "CAR_PETROL", 1280, 3, 5);
-        User arjun = createUser("arjun@green.org", "Arjun123!", "Arjun Patel", 22, "Bengaluru", "BUS", 2100, 12, 12);
-        User neha = createUser("neha@eco.in", "Neha123!", "Neha Gupta", 26, "Mumbai", "WALK", 5600, 8, 10);
+        List<User> users = userRepository.saveAll(List.of(
+                createUser("rohan@hyderabad.college", "Rohan123!", "Rohan Sharma", 21, "Hyderabad", "METRO", 450, 5, 7),
+                createUser("priya@techcorp.com", "Priya123!", "Priya Singh", 24, "Hyderabad", "CAR_PETROL", 1280, 3, 5),
+                createUser("arjun@green.org", "Arjun123!", "Arjun Patel", 22, "Bengaluru", "BUS", 2100, 12, 12),
+                createUser("neha@eco.in", "Neha123!", "Neha Gupta", 26, "Mumbai", "WALK", 5600, 8, 10)
+        ));
 
-        seedActivities(rohan.getId(), "METRO", new double[][]{{12.5, 0.035}, {8.0, 0.035}, {15.0, 0.035}, {10.0, 0.035}, {6.5, 0.035}}, 5);
-        seedActivities(priya.getId(), "CAR_PETROL", new double[][]{{18.0, 0.192}, {15.0, 0.192}, {20.0, 0.192}}, 3);
-        seedActivities(arjun.getId(), "BUS", new double[][]{{22.0, 0.089}, {18.0, 0.089}, {25.0, 0.089}, {15.0, 0.089}, {20.0, 0.089}}, 5);
-        seedActivities(neha.getId(), "WALK", new double[][]{{3.0, ZERO_EMISSION}, {4.5, ZERO_EMISSION}, {2.0, ZERO_EMISSION}, {5.0, ZERO_EMISSION}}, 4);
+        User rohan = users.get(0);
+        User priya = users.get(1);
+        User arjun = users.get(2);
+        User neha = users.get(3);
 
-        seedUtilityBills(rohan.getId(), 450, 3);
-        seedUtilityBills(priya.getId(), 680, 2);
-        seedUtilityBills(arjun.getId(), 320, 4);
-        seedUtilityBills(neha.getId(), 520, 2);
+        seedActivitiesBatch(rohan.getId(), "METRO", new double[][]{{12.5, 0.035}, {8.0, 0.035}, {15.0, 0.035}, {10.0, 0.035}, {6.5, 0.035}}, 5);
+        seedActivitiesBatch(priya.getId(), "CAR_PETROL", new double[][]{{18.0, 0.192}, {15.0, 0.192}, {20.0, 0.192}}, 3);
+        seedActivitiesBatch(arjun.getId(), "BUS", new double[][]{{22.0, 0.089}, {18.0, 0.089}, {25.0, 0.089}, {15.0, 0.089}, {20.0, 0.089}}, 5);
+        seedActivitiesBatch(neha.getId(), "WALK", new double[][]{{3.0, ZERO_EMISSION}, {4.5, ZERO_EMISSION}, {2.0, ZERO_EMISSION}, {5.0, ZERO_EMISSION}}, 4);
+
+        seedUtilityBillsBatch(rohan.getId(), 450, 3);
+        seedUtilityBillsBatch(priya.getId(), 680, 2);
+        seedUtilityBillsBatch(arjun.getId(), 320, 4);
+        seedUtilityBillsBatch(neha.getId(), 520, 2);
 
         recommendationService.generateRecommendations(rohan.getId());
         recommendationService.generateRecommendations(priya.getId());
@@ -115,10 +107,13 @@ public class SeedDataService implements CommandLineRunner {
         user.setLongestStreak(longest);
         user.setLastActivityDate(LocalDate.now());
         user.setLevel(RewardService.getLevelForPoints(points));
-        return userRepository.save(user);
+        return user;
     }
 
-    private void seedActivities(Long userId, String mode, double[][] trips, int daysBack) {
+    private void seedActivitiesBatch(Long userId, String mode, double[][] trips, int daysBack) {
+        List<Activity> activities = new ArrayList<>();
+        List<CarbonRecord> records = new ArrayList<>();
+
         for (int i = 0; i < trips.length; i++) {
             double dist = trips[i][0];
             LocalDate day = LocalDate.now().minusDays(daysBack - i);
@@ -130,16 +125,25 @@ public class SeedDataService implements CommandLineRunner {
             a.setActivityStart(day.atTime(9, 0));
             a.setActivityEnd(day.atTime(9, 30));
             a.setIsManual(false);
-            a = activityRepository.save(a);
+            activities.add(a);
+        }
+
+        List<Activity> saved = activityRepository.saveAll(activities);
+
+        for (int i = 0; i < saved.size(); i++) {
+            double dist = trips[i][0];
+            LocalDate day = LocalDate.now().minusDays(daysBack - i);
 
             CarbonRecord cr = carbonEngine.computeTransportCarbon(userId, mode, dist, day);
-            cr.setSourceId(a.getId());
+            cr.setSourceId(saved.get(i).getId());
             cr.setSourceType(SOURCE_TYPE_PREFIX + mode);
-            carbonRecordRepository.save(cr);
+            records.add(cr);
         }
+
+        carbonRecordRepository.saveAll(records);
     }
 
-    private void seedUtilityBills(Long userId, double kwh, int allocation) {
+    private void seedUtilityBillsBatch(Long userId, double kwh, int allocation) {
         UtilityBill bill = new UtilityBill();
         bill.setUserId(userId);
         bill.setTotalKwh(kwh);

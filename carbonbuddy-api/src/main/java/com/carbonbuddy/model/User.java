@@ -9,12 +9,11 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * JPA entity representing a registered user.
- * Stores profile information, streak data, level, and point totals.
- */
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_user_email", columnList = "email"),
+    @Index(name = "idx_user_points", columnList = "totalPoints")
+})
 public class User {
 
     private static final int MAX_EMAIL_LENGTH = 100;

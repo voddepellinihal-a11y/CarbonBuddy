@@ -5,15 +5,12 @@ import com.carbonbuddy.model.UtilityBill;
 import com.carbonbuddy.repository.UtilityBillRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
-/**
- * Service for creating and processing utility bills.
- * Computes carbon emissions from electricity consumption.
- */
 @Service
 public class UtilityBillService {
 
@@ -25,26 +22,14 @@ public class UtilityBillService {
     private final UtilityBillRepository utilityBillRepository;
     private final CarbonComputationEngine carbonEngine;
 
-    /**
-     * Constructs UtilityBillService with required dependencies.
-     *
-     * @param utilityBillRepository the utility bill repository
-     * @param carbonEngine          the carbon computation engine
-     */
     public UtilityBillService(UtilityBillRepository utilityBillRepository,
                               CarbonComputationEngine carbonEngine) {
         this.utilityBillRepository = utilityBillRepository;
         this.carbonEngine = carbonEngine;
     }
 
-    /**
-     * Creates a new utility bill and computes its carbon emissions.
-     *
-     * @param userId  the user ID
-     * @param request the utility bill request
-     * @return the persisted {@link UtilityBill}
-     */
     @Transactional
+    @CacheEvict(value = "dashboard", key = "#userId")
     public UtilityBill createUtilityBill(Long userId, UtilityBillRequest request) {
         log.debug("Creating utility bill for user {}", userId);
 
@@ -69,12 +54,6 @@ public class UtilityBillService {
         return bill;
     }
 
-    /**
-     * Sanitizes a string input by trimming and limiting length.
-     *
-     * @param input the raw string
-     * @return the sanitized string, or null if input is null
-     */
     private String sanitizeInput(String input) {
         if (input == null) {
             return null;

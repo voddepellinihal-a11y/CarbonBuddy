@@ -1,5 +1,9 @@
 server:
   port: 8085
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/css,application/javascript
+    min-response-size: 1024
 
 spring:
   datasource:
@@ -8,12 +12,13 @@ spring:
     password:
     driver-class-name: org.h2.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 20
+      minimum-idle: 5
       idle-timeout: 300000
       max-lifetime: 1200000
       connection-timeout: 30000
-      pool-name: CarbonBuddyHikariPool
+      leak-detection-threshold: 60000
+      pool-name: CarbonBuddyPool
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -31,6 +36,14 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+app:
+  jwt:
+    secret: "aGVsbG9fdGhpcyBpcyBhIHZlcnkgc2VjdXJlIGtleSBmb3IgY2FyYm9uYnVkZHkgand0IHRva2VucyBwbGVhc2UgZG9udCBzaGFyZQ=="
+    expiration-ms: 86400000
+  seed:
+    enabled: true
+    user-count: 4
 
 logging:
   level:

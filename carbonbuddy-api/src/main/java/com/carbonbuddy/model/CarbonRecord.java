@@ -7,12 +7,13 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * JPA entity representing a computed carbon emission record.
- * Stores the carbon footprint for a specific activity, utility usage, or food item.
- */
 @Entity
-@Table(name = "carbon_records")
+@Table(name = "carbon_records", indexes = {
+    @Index(name = "idx_carbon_user_id", columnList = "userId"),
+    @Index(name = "idx_carbon_record_date", columnList = "recordDate"),
+    @Index(name = "idx_carbon_user_date", columnList = "userId, recordDate"),
+    @Index(name = "idx_carbon_user_category", columnList = "userId, category")
+})
 public class CarbonRecord {
 
     private static final int MAX_CATEGORY_LENGTH = 50;

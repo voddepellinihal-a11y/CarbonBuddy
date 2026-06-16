@@ -6,6 +6,8 @@ import com.carbonbuddy.dto.response.AuthResponse;
 import com.carbonbuddy.exception.GlobalExceptionHandler;
 import com.carbonbuddy.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Validation;
+import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -38,6 +41,7 @@ class AuthControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(authController)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setValidator(new LocalValidatorFactoryBean())
                 .build();
     }
 
@@ -45,23 +49,23 @@ class AuthControllerTest {
     void register_shouldReturn201() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("test@example.com");
-        request.setPassword("password123");
+        request.setPassword("Password1!");
         request.setName("Test User");
 
         when(authService.register(any())).thenReturn(
-                new AuthResponse("token", 1L, "test@example.com", "Test User"));
+                new AuthResponse("token", "refresh-token", 1L, "test@example.com", "Test User"));
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token").value("token"))
-                .andExpect(jsonPath("$.email").value("test@example.com"));
+                .andExpect(jsonPath("$.data.token").value("token"))
+                .andExpect(jsonPath("$.data.email").value("test@example.com"));
     }
 
     @Test
     void register_shouldReturn400ForMissingFields() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -71,16 +75,16 @@ class AuthControllerTest {
     void login_shouldReturn200() throws Exception {
         LoginRequest request = new LoginRequest();
         request.setEmail("test@example.com");
-        request.setPassword("password123");
+        request.setPassword("Password1!");
 
         when(authService.login(any())).thenReturn(
-                new AuthResponse("token", 1L, "test@example.com", "Test User"));
+                new AuthResponse("token", "refresh-token", 1L, "test@example.com", "Test User"));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("token"));
+                .andExpect(jsonPath("$.data.token").value("token"));
     }
 
     @Test
@@ -91,7 +95,7 @@ class AuthControllerTest {
 
         when(authService.login(any())).thenThrow(new IllegalArgumentException("Invalid email or password"));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());

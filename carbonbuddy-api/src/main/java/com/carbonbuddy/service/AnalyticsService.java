@@ -9,6 +9,7 @@ import com.carbonbuddy.repository.RewardRepository;
 import com.carbonbuddy.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -18,10 +19,6 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Service that aggregates carbon records, rewards, and recommendations
- * to build the user's dashboard analytics response.
- */
 @Service
 public class AnalyticsService {
 
@@ -39,14 +36,6 @@ public class AnalyticsService {
     private final RewardRepository rewardRepository;
     private final UserRepository userRepository;
 
-    /**
-     * Constructs AnalyticsService with required repositories.
-     *
-     * @param carbonRecordRepository   repository for carbon emission records
-     * @param recommendationRepository repository for user recommendations
-     * @param rewardRepository         repository for user rewards and points
-     * @param userRepository           repository for user data
-     */
     public AnalyticsService(CarbonRecordRepository carbonRecordRepository,
                             RecommendationRepository recommendationRepository,
                             RewardRepository rewardRepository,
@@ -57,14 +46,7 @@ public class AnalyticsService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Builds the full dashboard response for a given user.
-     * Includes daily/weekly/monthly summaries, category breakdown, benchmarks,
-     * streak info, level info, recommendations, and engagement stats.
-     *
-     * @param userId the ID of the user
-     * @return the populated {@link DashboardResponse}
-     */
+    @Cacheable(value = "dashboard", key = "#userId")
     public DashboardResponse getDashboard(Long userId) {
         log.debug("Building dashboard for user {}", userId);
 

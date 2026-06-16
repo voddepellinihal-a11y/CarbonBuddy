@@ -1,0 +1,5 @@
+Contact: mailto:voddepelllinihal@gmail.com
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://github.com/voddepellinihal-a11y/CarbonBuddy
+Policy: https://github.com/voddepellinihal-a11y/CarbonBuddy/blob/master/SECURITY.md

@@ -1,8 +1,16 @@
 package com.carbonbuddy.controller;
 
+import com.carbonbuddy.dto.ApiResponse;
 import com.carbonbuddy.model.Recommendation;
 import com.carbonbuddy.security.SecurityUtil;
 import com.carbonbuddy.service.RecommendationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -11,65 +19,64 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-/**
- * REST controller for managing carbon-reduction recommendations.
- * Supports listing, generating, and completing recommendations.
- */
 @RestController
-@RequestMapping("/api/recommendations")
+@RequestMapping("/api/v1/recommendations")
 @Validated
+@Tag(name = "Recommendations", description = "Carbon-reduction recommendations")
 public class RecommendationController {
 
     private final RecommendationService recommendationService;
 
-    /**
-     * Constructs RecommendationController with the recommendation service.
-     *
-     * @param recommendationService the service handling recommendation logic
-     */
     public RecommendationController(RecommendationService recommendationService) {
         this.recommendationService = recommendationService;
     }
 
-    /**
-     * Returns all recommendations for the authenticated user.
-     *
-     * @param auth the authentication principal
-     * @return 200 OK with an unmodifiable list of recommendations
-     */
+    @Operation(summary = "Get recommendations", description = "Returns paginated recommendations for the user")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Recommendations retrieved"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping
-    public ResponseEntity<List<Recommendation>> getRecommendations(Authentication auth) {
+    public ResponseEntity<ApiResponse<Page<Recommendation>>> getRecommendations(
+            Authentication auth,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         Long userId = SecurityUtil.getCurrentUserId(auth);
-        return ResponseEntity.ok(Collections.unmodifiableList(
-                recommendationService.getUserRecommendations(userId)));
+        List<Recommendation> all = recommendationService.getUserRecommendations(userId);
+        Pageable pageable = PageRequest.of(page, size);
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), all.size());
+        Page<Recommendation> result = new PageImpl<>(
+                all.subList(Math.min(start, all.size()), end), pageable, all.size());
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    /**
-     * Generates new recommendations based on the user's emission data.
-     *
-     * @param auth the authentication principal
-     * @return 201 Created with no body
-     */
+    @Operation(summary = "Generate recommendations", description = "Generates new recommendations based on emission data")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Recommendations generated"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/generate")
-    public ResponseEntity<Void> generateRecommendations(Authentication auth) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> generateRecommendations(Authentication auth) {
         Long userId = SecurityUtil.getCurrentUserId(auth);
         recommendationService.generateRecommendations(userId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Recommendations generated", Map.of("status", "generated")));
     }
 
-    /**
-     * Marks a recommendation as completed and awards bonus points.
-     *
-     * @param auth the authentication principal
-     * @param id   the recommendation ID
-     * @return 200 OK with the completed recommendation
-     */
+    @Operation(summary = "Complete recommendation", description = "Marks a recommendation as completed and awards bonus points")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Recommendation completed"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Recommendation not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/{id}/complete")
-    public ResponseEntity<Recommendation> completeRecommendation(
+    public ResponseEntity<ApiResponse<Recommendation>> completeRecommendation(
             Authentication auth, @PathVariable Long id) {
         Long userId = SecurityUtil.getCurrentUserId(auth);
         Recommendation rec = recommendationService.completeRecommendation(userId, id);
-        return ResponseEntity.ok(rec);
+        return ResponseEntity.ok(ApiResponse.success("Recommendation completed", rec));
     }
 }

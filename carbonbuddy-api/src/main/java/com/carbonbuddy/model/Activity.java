@@ -6,12 +6,12 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
-/**
- * JPA entity representing a user activity (e.g. transport trip).
- * Stores transit mode, distance, duration, and route data.
- */
 @Entity
-@Table(name = "activities")
+@Table(name = "activities", indexes = {
+    @Index(name = "idx_activity_user_id", columnList = "userId"),
+    @Index(name = "idx_activity_start", columnList = "activityStart"),
+    @Index(name = "idx_activity_user_start", columnList = "userId, activityStart")
+})
 public class Activity {
 
     private static final int MAX_TRANSIT_MODE_LENGTH = 50;

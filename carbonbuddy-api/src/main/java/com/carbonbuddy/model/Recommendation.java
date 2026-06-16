@@ -6,12 +6,12 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
-/**
- * JPA entity representing a carbon-reduction recommendation.
- * Stores the recommendation details, estimated savings, and completion status.
- */
 @Entity
-@Table(name = "recommendations")
+@Table(name = "recommendations", indexes = {
+    @Index(name = "idx_rec_user_id", columnList = "userId"),
+    @Index(name = "idx_rec_status", columnList = "status"),
+    @Index(name = "idx_rec_user_status", columnList = "userId, status")
+})
 public class Recommendation {
 
     private static final int MAX_CATEGORY_LENGTH = 50;

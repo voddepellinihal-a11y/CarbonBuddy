@@ -1,56 +1,52 @@
 package com.carbonbuddy.controller;
 
+import com.carbonbuddy.dto.ApiResponse;
 import com.carbonbuddy.dto.request.LoginRequest;
 import com.carbonbuddy.dto.request.RegisterRequest;
 import com.carbonbuddy.dto.response.AuthResponse;
 import com.carbonbuddy.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * REST controller for user registration and authentication.
- * Provides /api/auth/register and /api/auth/login endpoints.
- */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @Validated
+@Tag(name = "Authentication", description = "User registration and login")
 public class AuthController {
 
     private final AuthService authService;
 
-    /**
-     * Constructs AuthController with the authentication service.
-     *
-     * @param authService the service handling auth logic
-     */
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
-    /**
-     * Registers a new user account.
-     *
-     * @param request the validated registration request
-     * @return 201 Created with the auth response containing JWT token
-     */
+    @Operation(summary = "Register user", description = "Register a new user account")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "User registered successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Email already registered")
+    })
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("User registered", response));
     }
 
-    /**
-     * Authenticates an existing user.
-     *
-     * @param request the validated login request
-     * @return 200 OK with the auth response containing JWT token
-     */
+    @Operation(summary = "Login user", description = "Authenticate an existing user")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Login successful"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid credentials"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 }

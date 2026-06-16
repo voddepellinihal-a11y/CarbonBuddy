@@ -7,6 +7,9 @@ import com.carbonbuddy.repository.RewardRepository;
 import com.carbonbuddy.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +19,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Service for managing user rewards, streaks, levels, and the redemption store.
- * Calculates points based on carbon savings and streak multipliers.
- */
 @Service
 public class RewardService {
 
@@ -70,24 +69,11 @@ public class RewardService {
         new StoreItem(7, "Carbon Offset Hero Badge", "Exclusive profile badge + 5x streak boost for 1 week", 1000, "badge")
     );
 
-    /**
-     * Constructs RewardService with required repositories.
-     *
-     * @param rewardRepository repository for rewards
-     * @param userRepository   repository for users
-     */
     public RewardService(RewardRepository rewardRepository, UserRepository userRepository) {
         this.rewardRepository = rewardRepository;
         this.userRepository = userRepository;
     }
 
-    /**
-     * Calculates the base points earned for a given carbon saving and streak.
-     *
-     * @param carbonKg the amount of carbon saved in kg
-     * @param streak   the current user streak
-     * @return the calculated points
-     */
     public static long getPointsForCarbon(double carbonKg, int streak) {
         long base = (long) (carbonKg * BASE_POINTS_MULTIPLIER);
         if (base < MIN_POINTS) {
@@ -97,12 +83,6 @@ public class RewardService {
         return Math.round(base * multiplier);
     }
 
-    /**
-     * Returns the streak multiplier based on the current streak length.
-     *
-     * @param streak the current streak
-     * @return the multiplier value
-     */
     public static double getStreakMultiplier(int streak) {
         if (streak >= STREAK_THRESHOLD_30) return MULTIPLIER_5X;
         if (streak >= STREAK_THRESHOLD_14) return MULTIPLIER_3X;
@@ -112,12 +92,6 @@ public class RewardService {
         return MULTIPLIER_1X;
     }
 
-    /**
-     * Returns a human-readable label for the current streak.
-     *
-     * @param streak the current streak
-     * @return the streak label
-     */
     public static String getStreakLabel(int streak) {
         if (streak >= STREAK_THRESHOLD_30) return "Legendary";
         if (streak >= STREAK_THRESHOLD_14) return "On Fire";
@@ -127,12 +101,6 @@ public class RewardService {
         return "Start Today!";
     }
 
-    /**
-     * Determines the user level based on total points.
-     *
-     * @param points the total points
-     * @return the level (1-5)
-     */
     public static int getLevelForPoints(long points) {
         if (points >= LEVEL_5_THRESHOLD) return LEVEL_5;
         if (points >= LEVEL_4_THRESHOLD) return LEVEL_4;
@@ -141,12 +109,6 @@ public class RewardService {
         return LEVEL_1;
     }
 
-    /**
-     * Returns the title for a given level.
-     *
-     * @param level the level number
-     * @return the level title
-     */
     public static String getLevelTitle(int level) {
         return switch (level) {
             case LEVEL_5 -> "Climate Champion";
@@ -157,12 +119,6 @@ public class RewardService {
         };
     }
 
-    /**
-     * Returns the icon emoji for a given level.
-     *
-     * @param level the level number
-     * @return the level icon
-     */
     public static String getLevelIcon(int level) {
         return switch (level) {
             case LEVEL_5 -> "champion";
@@ -173,12 +129,6 @@ public class RewardService {
         };
     }
 
-    /**
-     * Calculates the points needed to reach the next level.
-     *
-     * @param points the current total points
-     * @return the points to next level, or 0 if at max level
-     */
     public static long getPointsToNextLevel(long points) {
         if (points >= LEVEL_5_THRESHOLD) return 0;
         if (points >= LEVEL_4_THRESHOLD) return LEVEL_5_THRESHOLD - points;
@@ -187,15 +137,8 @@ public class RewardService {
         return LEVEL_2_THRESHOLD - points;
     }
 
-    /**
-     * Awards points to a user for a carbon-saving activity and persists a reward record.
-     *
-     * @param userId    the user ID
-     * @param source    the source of the reward (e.g. ACTIVITY, RECOMMENDATION)
-     * @param sourceId  the ID of the source entity
-     * @param carbonKg  the carbon saved in kg
-     */
     @Transactional
+    @CacheEvict(value = "dashboard", key = "#userId")
     public void awardPoints(Long userId, String source, Long sourceId, double carbonKg) {
         log.debug("Awarding points to user {} from source {}", userId, source);
 
@@ -218,14 +161,8 @@ public class RewardService {
         rewardRepository.save(reward);
     }
 
-    /**
-     * Updates the user's daily activity streak.
-     * Resets streak if more than one day has passed since last activity.
-     *
-     * @param userId the user ID
-     * @return the updated current streak
-     */
     @Transactional
+    @CacheEvict(value = "dashboard", key = "#userId")
     public int updateStreak(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
         LocalDate today = LocalDate.now();
@@ -251,12 +188,7 @@ public class RewardService {
         return user.getCurrentStreak();
     }
 
-    /**
-     * Returns all store items with affordability status for the given user.
-     *
-     * @param userId the user ID
-     * @return an unmodifiable list of store items
-     */
+    @Cacheable(value = "storeItems", key = "#userId")
     public List<StoreItem> getStoreItems(Long userId) {
         int balance = rewardRepository.getBalanceByUserId(userId);
         return Collections.unmodifiableList(STORE_ITEMS.stream().map(item -> {
@@ -266,26 +198,15 @@ public class RewardService {
         }).collect(Collectors.toList()));
     }
 
-    /**
-     * Returns the user's current store balance.
-     *
-     * @param userId the user ID
-     * @return the balance in CarbonCoins
-     */
     public int getStoreBalance(Long userId) {
         return rewardRepository.getBalanceByUserId(userId);
     }
 
-    /**
-     * Redeems a store item for the user, deducting points and generating a redemption code.
-     *
-     * @param userId the user ID
-     * @param itemId the store item ID
-     * @return a map containing redemption details
-     * @throws IllegalArgumentException if the item is invalid or balance is insufficient
-     * @throws NoSuchElementException   if the user is not found
-     */
     @Transactional
+    @Caching(evict = {
+        @org.springframework.cache.annotation.CacheEvict(value = "storeItems", key = "#userId"),
+        @org.springframework.cache.annotation.CacheEvict(value = "dashboard", key = "#userId")
+    })
     public Map<String, Object> redeemItem(Long userId, int itemId) {
         log.debug("Redeeming item {} for user {}", itemId, userId);
 
@@ -326,12 +247,6 @@ public class RewardService {
         return Collections.unmodifiableMap(result);
     }
 
-    /**
-     * Returns the redemption history for a user.
-     *
-     * @param userId the user ID
-     * @return an unmodifiable list of redemption entries
-     */
     public List<Map<String, Object>> getRedemptionHistory(Long userId) {
         List<Reward> redemptions = rewardRepository.findByUserIdAndTransactionType(userId, TRANSACTION_DEBIT);
         return Collections.unmodifiableList(redemptions.stream().map(r -> {
@@ -347,13 +262,6 @@ public class RewardService {
         }).collect(Collectors.toList()));
     }
 
-    /**
-     * Generates a unique redemption code for a store item.
-     *
-     * @param itemId the store item ID
-     * @param userId the user ID
-     * @return the generated code
-     */
     private String generateCode(int itemId, Long userId) {
         Random rnd = new Random();
         StringBuilder code = new StringBuilder(COUPON_PREFIX);

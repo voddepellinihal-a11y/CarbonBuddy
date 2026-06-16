@@ -5,12 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
-/**
- * JPA entity representing a reward transaction (credit or debit).
- * Tracks points earned from activities or spent in the store.
- */
 @Entity
-@Table(name = "rewards")
+@Table(name = "rewards", indexes = {
+    @Index(name = "idx_reward_user_id", columnList = "userId"),
+    @Index(name = "idx_reward_user_type", columnList = "userId, transactionType"),
+    @Index(name = "idx_reward_source", columnList = "source, sourceId")
+})
 public class Reward {
 
     private static final int MAX_SOURCE_LENGTH = 50;

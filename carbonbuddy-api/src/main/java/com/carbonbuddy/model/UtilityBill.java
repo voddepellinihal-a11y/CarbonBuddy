@@ -7,12 +7,11 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * JPA entity representing a utility bill (e.g. electricity).
- * Stores consumption data and allocation count for per-person carbon computation.
- */
 @Entity
-@Table(name = "utility_bills")
+@Table(name = "utility_bills", indexes = {
+    @Index(name = "idx_utility_user_id", columnList = "userId"),
+    @Index(name = "idx_utility_billing_end", columnList = "billingEnd")
+})
 public class UtilityBill {
 
     private static final int MAX_UTILITY_TYPE_LENGTH = 50;

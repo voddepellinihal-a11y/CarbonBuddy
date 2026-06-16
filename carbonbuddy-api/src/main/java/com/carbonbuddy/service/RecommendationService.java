@@ -16,10 +16,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Service for generating, managing, and completing carbon-reduction recommendations.
- * Analyzes user's top emission category and provides targeted suggestions.
- */
 @Service
 public class RecommendationService {
 
@@ -44,13 +40,6 @@ public class RecommendationService {
     private final CarbonRecordRepository carbonRecordRepository;
     private final RewardRepository rewardRepository;
 
-    /**
-     * Constructs RecommendationService with required repositories.
-     *
-     * @param recommendationRepository repository for recommendations
-     * @param carbonRecordRepository   repository for carbon records
-     * @param rewardRepository         repository for rewards
-     */
     public RecommendationService(RecommendationRepository recommendationRepository,
                                  CarbonRecordRepository carbonRecordRepository,
                                  RewardRepository rewardRepository) {
@@ -59,23 +48,11 @@ public class RecommendationService {
         this.rewardRepository = rewardRepository;
     }
 
-    /**
-     * Retrieves all recommendations for a user, ordered by creation date descending.
-     *
-     * @param userId the user ID
-     * @return an unmodifiable list of recommendations
-     */
     public List<Recommendation> getUserRecommendations(Long userId) {
         return Collections.unmodifiableList(
                 recommendationRepository.findByUserIdOrderByCreatedAtDesc(userId));
     }
 
-    /**
-     * Analyzes the user's top emission category for the current month
-     * and generates a targeted recommendation.
-     *
-     * @param userId the user ID
-     */
     public void generateRecommendations(Long userId) {
         log.debug("Generating recommendations for user {}", userId);
 
@@ -96,13 +73,6 @@ public class RecommendationService {
         saveRecommendationForCategory(userId, topCategory, topCarbon);
     }
 
-    /**
-     * Saves a category-specific recommendation for a user.
-     *
-     * @param userId   the user ID
-     * @param category the emission category
-     * @param carbonKg the total carbon kg for the category
-     */
     public void saveRecommendationForCategory(Long userId, String category, double carbonKg) {
         Recommendation rec = new Recommendation();
         rec.setUserId(userId);
@@ -145,14 +115,6 @@ public class RecommendationService {
         recommendationRepository.save(rec);
     }
 
-    /**
-     * Marks a recommendation as completed and awards bonus points to the user.
-     *
-     * @param userId           the user ID
-     * @param recommendationId the recommendation ID
-     * @return the completed {@link Recommendation}
-     * @throws IllegalArgumentException if the recommendation is not found or does not belong to the user
-     */
     @Transactional
     public Recommendation completeRecommendation(Long userId, Long recommendationId) {
         log.debug("Completing recommendation {} for user {}", recommendationId, userId);
