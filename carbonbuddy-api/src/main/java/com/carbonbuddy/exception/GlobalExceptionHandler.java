@@ -13,7 +13,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
@@ -22,41 +21,80 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+/**
+ * Global exception handler that translates exceptions into consistent HTTP error responses.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /**
+     * Handles IllegalArgumentException (400 Bad Request).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
         log.warn("Bad request: {}", ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    /**
+     * Handles NoSuchElementException (404 Not Found).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(NoSuchElementException ex) {
         log.warn("Resource not found: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    /**
+     * Handles EntityNotFoundException (404 Not Found).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleEntityNotFound(EntityNotFoundException ex) {
         log.warn("Entity not found: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, "Resource not found");
     }
 
+    /**
+     * Handles AccessDeniedException (403 Forbidden).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
         log.warn("Access denied: {}", ex.getMessage());
         return buildResponse(HttpStatus.FORBIDDEN, "Access denied");
     }
 
+    /**
+     * Handles DataIntegrityViolationException (409 Conflict).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation: {}", ex.getMessage());
         return buildResponse(HttpStatus.CONFLICT, "Data already exists or constraint violated");
     }
 
+    /**
+     * Handles MethodArgumentNotValidException (400 Bad Request with field errors).
+     *
+     * @param ex the exception
+     * @return the error response with field-level validation messages
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -71,36 +109,73 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    /**
+     * Handles HttpMessageNotReadableException (400 Bad Request).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleMalformedJson(HttpMessageNotReadableException ex) {
         log.warn("Malformed request body: {}", ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, "Malformed request body");
     }
 
+    /**
+     * Handles MethodArgumentTypeMismatchException (400 Bad Request).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         log.warn("Type mismatch for parameter '{}': {}", ex.getName(), ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, "Invalid parameter: " + ex.getName());
     }
 
+    /**
+     * Handles MissingServletRequestParameterException (400 Bad Request).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<Map<String, Object>> handleMissingParam(MissingServletRequestParameterException ex) {
         log.warn("Missing parameter: {}", ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, "Missing required parameter: " + ex.getParameterName());
     }
 
+    /**
+     * Handles DateTimeParseException (400 Bad Request).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(DateTimeParseException.class)
     public ResponseEntity<Map<String, Object>> handleDateParse(DateTimeParseException ex) {
         log.warn("Date parse error: {}", ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, "Invalid date format");
     }
 
+    /**
+     * Handles all uncaught exceptions (500 Internal Server Error).
+     *
+     * @param ex the exception
+     * @return the error response
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleInternal(Exception ex) {
         log.error("Unexpected error", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
     }
 
+    /**
+     * Builds a standardized error response body.
+     *
+     * @param status  the HTTP status
+     * @param message the error message
+     * @return the response entity
+     */
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now().toString());

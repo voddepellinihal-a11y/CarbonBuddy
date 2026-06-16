@@ -1,16 +1,28 @@
 package com.carbonbuddy.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a carbon-reduction recommendation.
+ * Stores the recommendation details, estimated savings, and completion status.
+ */
 @Entity
 @Table(name = "recommendations")
 public class Recommendation {
+
+    private static final int MAX_CATEGORY_LENGTH = 50;
+    private static final int MAX_STATUS_LENGTH = 20;
+    private static final String DEFAULT_STATUS = "PENDING";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(nullable = false)
     private Long userId;
 
@@ -20,15 +32,19 @@ public class Recommendation {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @PositiveOrZero(message = "Estimated savings must be non-negative")
     private Double estimatedSavingsKg;
 
+    @PositiveOrZero(message = "Estimated savings percent must be non-negative")
     private Double estimatedSavingsPercent;
 
-    @Column(length = 50)
+    @Size(max = MAX_CATEGORY_LENGTH)
+    @Column(length = MAX_CATEGORY_LENGTH)
     private String category;
 
-    @Column(length = 20)
-    private String status;
+    @Size(max = MAX_STATUS_LENGTH)
+    @Column(length = MAX_STATUS_LENGTH)
+    private String status = DEFAULT_STATUS;
 
     private LocalDateTime completedAt;
 

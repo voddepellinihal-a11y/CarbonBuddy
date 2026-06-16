@@ -1,41 +1,70 @@
 package com.carbonbuddy.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a registered user.
+ * Stores profile information, streak data, level, and point totals.
+ */
 @Entity
 @Table(name = "users")
 public class User {
+
+    private static final int MAX_EMAIL_LENGTH = 100;
+    private static final int MAX_NAME_LENGTH = 100;
+    private static final int MAX_MUNICIPALITY_LENGTH = 100;
+    private static final int MAX_TRANSIT_MODE_LENGTH = 50;
+    private static final int MIN_AGE = 1;
+    private static final int MAX_AGE = 150;
+    private static final int DEFAULT_LEVEL = 1;
+    private static final long DEFAULT_POINTS = 0;
+    private static final int DEFAULT_STREAK = 0;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @NotBlank
+    @Email
+    @Size(max = MAX_EMAIL_LENGTH)
+    @Column(nullable = false, unique = true, length = MAX_EMAIL_LENGTH)
     private String email;
 
+    @NotBlank
     @Column(nullable = false)
     private String passwordHash;
 
-    @Column(nullable = false, length = 100)
+    @NotBlank
+    @Size(max = MAX_NAME_LENGTH)
+    @Column(nullable = false, length = MAX_NAME_LENGTH)
     private String name;
 
+    @Min(value = MIN_AGE, message = "Age must be at least 1")
+    @Max(value = MAX_AGE, message = "Age must not exceed 150")
     private Integer age;
 
-    @Column(length = 100)
+    @Size(max = MAX_MUNICIPALITY_LENGTH)
+    @Column(length = MAX_MUNICIPALITY_LENGTH)
     private String municipality;
 
-    @Column(length = 50)
+    @Size(max = MAX_TRANSIT_MODE_LENGTH)
+    @Column(length = MAX_TRANSIT_MODE_LENGTH)
     private String defaultTransitMode;
 
-    private long totalPoints = 0;
+    private long totalPoints = DEFAULT_POINTS;
 
-    private int currentStreak = 0;
+    private int currentStreak = DEFAULT_STREAK;
 
-    private int longestStreak = 0;
+    private int longestStreak = DEFAULT_STREAK;
 
-    private int level = 1;
+    private int level = DEFAULT_LEVEL;
 
     private LocalDate lastActivityDate;
 

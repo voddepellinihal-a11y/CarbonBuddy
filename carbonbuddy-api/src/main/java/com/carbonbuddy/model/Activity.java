@@ -1,36 +1,52 @@
 package com.carbonbuddy.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a user activity (e.g. transport trip).
+ * Stores transit mode, distance, duration, and route data.
+ */
 @Entity
 @Table(name = "activities")
 public class Activity {
+
+    private static final int MAX_TRANSIT_MODE_LENGTH = 50;
+    private static final Boolean DEFAULT_IS_MANUAL = false;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(nullable = false)
     private Long userId;
 
-    @Column(length = 50)
+    @Size(max = MAX_TRANSIT_MODE_LENGTH)
+    @Column(length = MAX_TRANSIT_MODE_LENGTH)
     private String transitMode;
 
+    @Positive(message = "Distance must be positive")
     private Double distanceKm;
 
+    @Positive(message = "Duration must be positive")
     private Double durationMinutes;
 
     @Column(columnDefinition = "TEXT")
     private String routePolyline;
 
+    @NotNull
     @Column(nullable = false)
     private LocalDateTime activityStart;
 
     private LocalDateTime activityEnd;
 
+    @NotNull
     @Column(nullable = false)
-    private Boolean isManual = false;
+    private Boolean isManual = DEFAULT_IS_MANUAL;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

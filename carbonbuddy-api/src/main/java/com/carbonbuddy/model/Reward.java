@@ -1,16 +1,26 @@
 package com.carbonbuddy.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a reward transaction (credit or debit).
+ * Tracks points earned from activities or spent in the store.
+ */
 @Entity
 @Table(name = "rewards")
 public class Reward {
+
+    private static final int MAX_SOURCE_LENGTH = 50;
+    private static final int MAX_TRANSACTION_TYPE_LENGTH = 20;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(nullable = false)
     private Long userId;
 
@@ -18,12 +28,14 @@ public class Reward {
 
     private Integer creditsSpent;
 
-    @Column(length = 50)
+    @Size(max = MAX_SOURCE_LENGTH)
+    @Column(length = MAX_SOURCE_LENGTH)
     private String source;
 
     private Long sourceId;
 
-    @Column(length = 20)
+    @Size(max = MAX_TRANSACTION_TYPE_LENGTH)
+    @Column(length = MAX_TRANSACTION_TYPE_LENGTH)
     private String transactionType;
 
     @Column(nullable = false, updatable = false)

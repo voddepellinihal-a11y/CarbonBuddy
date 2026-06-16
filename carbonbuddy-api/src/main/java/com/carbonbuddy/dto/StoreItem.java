@@ -1,6 +1,11 @@
 package com.carbonbuddy.dto;
 
+/**
+ * Data Transfer Object representing an item in the reward store.
+ * Includes affordability status based on the user's current balance.
+ */
 public class StoreItem {
+
     private int id;
     private String name;
     private String description;
@@ -8,8 +13,20 @@ public class StoreItem {
     private String icon;
     private boolean affordable;
 
+    /**
+     * Default constructor.
+     */
     public StoreItem() {}
 
+    /**
+     * Constructs a StoreItem with all required fields.
+     *
+     * @param id          the item ID
+     * @param name        the item name
+     * @param description the item description
+     * @param cost        the cost in CarbonCoins
+     * @param icon        the item icon identifier
+     */
     public StoreItem(int id, String name, String description, int cost, String icon) {
         this.id = id;
         this.name = name;

@@ -12,7 +12,12 @@ import RewardsStore from './pages/RewardsStore'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="page-center"><div className="spinner" /></div>
+  if (loading) return (
+    <div className="page-center" role="status" aria-live="polite">
+      <div className="spinner" aria-hidden="true" />
+      <span className="sr-only">Loading, please wait...</span>
+    </div>
+  )
   return user ? children : <Navigate to="/login" />
 }
 
@@ -21,8 +26,11 @@ export default function App() {
 
   return (
     <div className="app">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       {user && <Navbar />}
-      <main className={user ? 'main-content' : ''}>
+      <main id="main-content" className={user ? 'main-content' : ''} tabIndex="-1">
         <Routes>
           <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
           <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />

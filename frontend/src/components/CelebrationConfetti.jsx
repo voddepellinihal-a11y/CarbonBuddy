@@ -35,7 +35,7 @@ export default function CelebrationConfetti({ active = false }) {
   if (!active || pieces.length === 0) return null
 
   return (
-    <div className="confetti-container">
+    <div className="confetti-container" aria-hidden="true">
       {pieces.map((p) => (
         <div
           key={p.id}

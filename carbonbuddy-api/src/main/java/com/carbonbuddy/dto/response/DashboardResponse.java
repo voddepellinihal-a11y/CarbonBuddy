@@ -2,6 +2,11 @@ package com.carbonbuddy.dto.response;
 
 import java.util.List;
 
+/**
+ * Response DTO for the user dashboard.
+ * Aggregates daily/weekly/monthly summaries, category breakdown,
+ * benchmarks, streak info, level info, recommendations, and engagement stats.
+ */
 public class DashboardResponse {
 
     private PeriodSummary daily;
@@ -36,6 +41,9 @@ public class DashboardResponse {
     public FomoStats getFomo() { return fomo; }
     public void setFomo(FomoStats fomo) { this.fomo = fomo; }
 
+    /**
+     * Summary for a time period (daily, weekly, monthly).
+     */
     public static class PeriodSummary {
         private double totalCarbonKg;
         private double totalDistanceKm;
@@ -48,6 +56,9 @@ public class DashboardResponse {
         public void setChangePercent(double changePercent) { this.changePercent = changePercent; }
     }
 
+    /**
+     * Breakdown of emissions by category.
+     */
     public static class CategoryBreakdown {
         private String category;
         private double carbonKg;
@@ -60,6 +71,9 @@ public class DashboardResponse {
         public void setPercentage(double percentage) { this.percentage = percentage; }
     }
 
+    /**
+     * Benchmark comparison data.
+     */
     public static class BenchmarkComparison {
         private String label;
         private double userValue;
@@ -72,6 +86,9 @@ public class DashboardResponse {
         public void setAverageValue(double averageValue) { this.averageValue = averageValue; }
     }
 
+    /**
+     * Recommendation item for the dashboard.
+     */
     public static class RecommendationItem {
         private Long id;
         private String title;
@@ -96,6 +113,9 @@ public class DashboardResponse {
         public void setCompletionCount(int completionCount) { this.completionCount = completionCount; }
     }
 
+    /**
+     * User streak information.
+     */
     public static class StreakInfo {
         private int currentStreak;
         private int longestStreak;
@@ -111,6 +131,9 @@ public class DashboardResponse {
         public void setLabel(String label) { this.label = label; }
     }
 
+    /**
+     * User level information.
+     */
     public static class LevelInfo {
         private int level;
         private String title;
@@ -132,6 +155,9 @@ public class DashboardResponse {
         public void setPercentile(int percentile) { this.percentile = percentile; }
     }
 
+    /**
+     * Engagement and FOMO statistics.
+     */
     public static class FomoStats {
         private int totalUsers;
         private int usersActiveToday;

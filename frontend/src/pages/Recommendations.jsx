@@ -47,29 +47,45 @@ export default function Recommendations() {
     }
   }
 
-  if (loading) return <div className="page-center"><div className="spinner" /></div>
+  if (loading) return (
+    <div className="page-center" role="status" aria-live="polite">
+      <div className="spinner" aria-hidden="true" />
+      <span className="sr-only">Loading recommendations...</span>
+    </div>
+  )
 
   return (
     <div className="page">
       <div className="page-header">
-        <h1>Nudges & Recommendations</h1>
-        <button className="btn btn-primary" onClick={handleGenerate} disabled={generating}>
+        <h1 id="reco-heading">Nudges &amp; Recommendations</h1>
+        <button
+          className="btn btn-primary"
+          onClick={handleGenerate}
+          disabled={generating}
+          aria-busy={generating}
+          aria-label={generating ? 'Generating new nudges, please wait' : 'Generate new personalized nudges'}
+        >
           {generating ? 'Generating...' : 'Generate New'}
         </button>
       </div>
       <p className="page-desc">Personalized behavioral recommendations based on your carbon profile (FR-6.x).</p>
 
       {data.length === 0 ? (
-        <div className="card empty-card">
+        <article className="card empty-card">
           <p>No recommendations yet. Click "Generate New" to analyze your carbon data and get personalized nudges.</p>
-        </div>
+        </article>
       ) : (
-        <div className="reco-grid">
+        <div className="reco-grid" role="list" aria-label="Recommendations list">
           {data.map(r => (
-            <div key={r.id} className={`reco-card card ${r.status === 'COMPLETED' ? 'completed' : ''}`}>
+            <article key={r.id} className={`reco-card card ${r.status === 'COMPLETED' ? 'completed' : ''}`} role="listitem" aria-label={`Recommendation: ${r.title}, status: ${r.status}`}>
               <div className="reco-header">
-                <span className="reco-icon">{r.category === 'TRANSPORT' ? '🚗' : r.category === 'FOOD' ? '🍽️' : r.category === 'UTILITY' ? '💡' : '🌱'}</span>
-                <span className={`badge ${r.status === 'COMPLETED' ? 'badge-success' : 'badge-pending'}`}>{r.status}</span>
+                <span className="reco-icon" aria-hidden="true">{r.category === 'TRANSPORT' ? '🚗' : r.category === 'FOOD' ? '🍽️' : r.category === 'UTILITY' ? '💡' : '🌱'}</span>
+                <span
+                  className={`badge ${r.status === 'COMPLETED' ? 'badge-success' : 'badge-pending'}`}
+                  aria-label={`Status: ${r.status === 'COMPLETED' ? 'Completed' : 'Pending'}`}
+                >
+                  {r.status}
+                </span>
               </div>
               <h3>{r.title}</h3>
               <p>{r.description}</p>
@@ -86,14 +102,20 @@ export default function Recommendations() {
                 )}
               </div>
               {r.status === 'PENDING' && (
-                <button className="btn btn-success btn-full" onClick={() => handleComplete(r.id)} disabled={completing === r.id}>
+                <button
+                  className="btn btn-success btn-full"
+                  onClick={() => handleComplete(r.id)}
+                  disabled={completing === r.id}
+                  aria-busy={completing === r.id}
+                  aria-label={completing === r.id ? `Completing ${r.title}` : `Complete ${r.title} and earn credits`}
+                >
                   {completing === r.id ? 'Completing...' : 'Complete & Earn Credits'}
                 </button>
               )}
               {r.status === 'COMPLETED' && r.completedAt && (
-                <div className="reco-completed-date">Completed</div>
+                <div className="reco-completed-date" aria-label="Completed">Completed</div>
               )}
-            </div>
+            </article>
           ))}
         </div>
       )}

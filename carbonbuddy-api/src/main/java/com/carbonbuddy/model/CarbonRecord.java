@@ -1,32 +1,47 @@
 package com.carbonbuddy.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a computed carbon emission record.
+ * Stores the carbon footprint for a specific activity, utility usage, or food item.
+ */
 @Entity
 @Table(name = "carbon_records")
 public class CarbonRecord {
+
+    private static final int MAX_CATEGORY_LENGTH = 50;
+    private static final int MAX_SOURCE_TYPE_LENGTH = 50;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(nullable = false)
     private Long userId;
 
-    @Column(length = 50)
+    @Size(max = MAX_CATEGORY_LENGTH)
+    @Column(length = MAX_CATEGORY_LENGTH)
     private String category;
 
+    @PositiveOrZero(message = "Carbon kg must be non-negative")
     private Double carbonKg;
 
     private Double distanceKm;
 
-    @Column(length = 50)
+    @Size(max = MAX_SOURCE_TYPE_LENGTH)
+    @Column(length = MAX_SOURCE_TYPE_LENGTH)
     private String sourceType;
 
     private Long sourceId;
 
+    @NotNull
     @Column(nullable = false)
     private LocalDate recordDate;
 

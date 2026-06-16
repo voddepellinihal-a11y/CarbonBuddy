@@ -4,7 +4,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 
+/**
+ * Request DTO for creating a new activity.
+ * Validates distance, duration, transit mode, and activity timestamps.
+ */
 public class ActivityRequest {
+
+    private static final int MAX_TRANSIT_MODE_LENGTH = 50;
+    private static final int MAX_ROUTE_LENGTH = 10000;
 
     @Positive(message = "Distance must be positive")
     @NotNull

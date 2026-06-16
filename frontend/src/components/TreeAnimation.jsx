@@ -41,17 +41,23 @@ export default function TreeAnimation({ level = 1, points = 0, isChampion = fals
   }, [config.hasFruit, level, config.crownSize])
 
   const showChampionEffects = isChampion || level >= 5
+  const levelLabels = {
+    1: 'Level 1 tree',
+    2: 'Level 2 tree',
+    3: 'Level 3 tree',
+    4: 'Level 4 tree with fruits',
+    5: 'Level 5 champion tree with fruits',
+  }
 
   return (
-    <div className="tree-container">
-      <div className="tree-wrapper" style={{ '--crown-size': `${config.crownSize}px`, '--trunk-h': `${config.trunkH}px`, '--trunk-w': `${config.trunkW}px` }}>
-        {/* Ground */}
+    <div
+      className="tree-container"
+      role="img"
+      aria-label={`Level ${level} tree animation. ${levelLabels[Math.min(level, 5)] || levelLabels[1]}`}
+    >
+      <div className="tree-wrapper" style={{ '--crown-size': `${config.crownSize}px`, '--trunk-h': `${config.trunkH}px`, '--trunk-w': `${config.trunkW}px` }} aria-hidden="true">
         <div className="tree-ground" />
-
-        {/* Crown glow */}
         {showChampionEffects && <div className="crown-glow" />}
-
-        {/* Leaves */}
         <div className="tree-crown">
           {leaves.map((l) => (
             <div
@@ -67,8 +73,6 @@ export default function TreeAnimation({ level = 1, points = 0, isChampion = fals
             />
           ))}
         </div>
-
-        {/* Fruits */}
         {fruits.map((f) => (
           <div
             key={`fruit-${f.id}`}
@@ -80,8 +84,6 @@ export default function TreeAnimation({ level = 1, points = 0, isChampion = fals
             }}
           />
         ))}
-
-        {/* Champion sparkles around tree */}
         {showChampionEffects && (
           <div className="champion-sparkles">
             {[...Array(6)].map((_, i) => (
@@ -96,8 +98,6 @@ export default function TreeAnimation({ level = 1, points = 0, isChampion = fals
             ))}
           </div>
         )}
-
-        {/* Trunk */}
         <div className="tree-trunk">
           <div className="tree-trunk-inner" />
         </div>

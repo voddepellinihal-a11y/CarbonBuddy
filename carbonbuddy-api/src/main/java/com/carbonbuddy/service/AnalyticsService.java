@@ -7,6 +7,8 @@ import com.carbonbuddy.repository.CarbonRecordRepository;
 import com.carbonbuddy.repository.RecommendationRepository;
 import com.carbonbuddy.repository.RewardRepository;
 import com.carbonbuddy.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -16,14 +18,35 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Service that aggregates carbon records, rewards, and recommendations
+ * to build the user's dashboard analytics response.
+ */
 @Service
 public class AnalyticsService {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
+
+    private static final int DEFAULT_PERCENTILE = 1;
+    private static final double PERCENTAGE_MULTIPLIER = 100.0;
+    private static final int STREAK_DANGER_HOURS = 24;
+    private static final String DEFAULT_TOP_CATEGORY = "TRANSPORT";
+    private static final String CATEGORY_TRANSPORT = "TRANSPORT";
+    private static final String STATUS_PENDING = "PENDING";
 
     private final CarbonRecordRepository carbonRecordRepository;
     private final RecommendationRepository recommendationRepository;
     private final RewardRepository rewardRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Constructs AnalyticsService with required repositories.
+     *
+     * @param carbonRecordRepository   repository for carbon emission records
+     * @param recommendationRepository repository for user recommendations
+     * @param rewardRepository         repository for user rewards and points
+     * @param userRepository           repository for user data
+     */
     public AnalyticsService(CarbonRecordRepository carbonRecordRepository,
                             RecommendationRepository recommendationRepository,
                             RewardRepository rewardRepository,
@@ -34,7 +57,17 @@ public class AnalyticsService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Builds the full dashboard response for a given user.
+     * Includes daily/weekly/monthly summaries, category breakdown, benchmarks,
+     * streak info, level info, recommendations, and engagement stats.
+     *
+     * @param userId the ID of the user
+     * @return the populated {@link DashboardResponse}
+     */
     public DashboardResponse getDashboard(Long userId) {
+        log.debug("Building dashboard for user {}", userId);
+
         LocalDate today = LocalDate.now();
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate monthStart = today.withDayOfMonth(1);
@@ -56,7 +89,7 @@ public class AnalyticsService {
         double prevWeekCarbon = carbonRecordRepository.sumCarbonByUserIdAndPeriod(
                 userId, weekStart.minusDays(7), weekStart.minusDays(1));
         weekly.setChangePercent(prevWeekCarbon > 0
-                ? ((weekly.getTotalCarbonKg() - prevWeekCarbon) / prevWeekCarbon) * 100 : 0);
+                ? ((weekly.getTotalCarbonKg() - prevWeekCarbon) / prevWeekCarbon) * PERCENTAGE_MULTIPLIER : 0);
 
         response.setDaily(daily);
         response.setWeekly(weekly);
@@ -70,7 +103,7 @@ public class AnalyticsService {
             DashboardResponse.CategoryBreakdown cb = new DashboardResponse.CategoryBreakdown();
             cb.setCategory((String) row[0]);
             cb.setCarbonKg(((Number) row[1]).doubleValue());
-            cb.setPercentage(totalCarbon > 0 ? (cb.getCarbonKg() / totalCarbon) * 100 : 0);
+            cb.setPercentage(totalCarbon > 0 ? (cb.getCarbonKg() / totalCarbon) * PERCENTAGE_MULTIPLIER : 0);
             return cb;
         }).collect(Collectors.toList());
         response.setBreakdown(breakdown);
@@ -87,7 +120,7 @@ public class AnalyticsService {
         response.setTotalCredits(rewardRepository.getBalanceByUserId(userId));
 
         List<Recommendation> recs = recommendationRepository
-                .findByUserIdAndStatusOrderByCreatedAtDesc(userId, "PENDING");
+                .findByUserIdAndStatusOrderByCreatedAtDesc(userId, STATUS_PENDING);
         List<DashboardResponse.RecommendationItem> items = recs.stream().map(r -> {
             DashboardResponse.RecommendationItem item = new DashboardResponse.RecommendationItem();
             item.setId(r.getId());
@@ -103,47 +136,64 @@ public class AnalyticsService {
 
         User user = userRepository.findById(userId).orElse(null);
         if (user != null) {
-            DashboardResponse.StreakInfo streakInfo = new DashboardResponse.StreakInfo();
-            streakInfo.setCurrentStreak(user.getCurrentStreak());
-            streakInfo.setLongestStreak(user.getLongestStreak());
-            streakInfo.setPointsMultiplier(RewardService.getStreakMultiplier(user.getCurrentStreak()));
-            streakInfo.setLabel(RewardService.getStreakLabel(user.getCurrentStreak()));
-            response.setStreak(streakInfo);
-
-            DashboardResponse.LevelInfo levelInfo = new DashboardResponse.LevelInfo();
-            int level = RewardService.getLevelForPoints(user.getTotalPoints());
-            levelInfo.setLevel(level);
-            levelInfo.setTitle(RewardService.getLevelTitle(level));
-            levelInfo.setIcon(RewardService.getLevelIcon(level));
-            levelInfo.setPoints(user.getTotalPoints());
-            levelInfo.setPointsToNext(RewardService.getPointsToNextLevel(user.getTotalPoints()));
-
-            int usersAhead = userRepository.countUsersWithMorePoints(user.getTotalPoints());
-            int totalUsers = Math.max(userRepository.countTotalUsers(), 1);
-            int percentile = Math.max(1, (int) Math.ceil(((double) (totalUsers - usersAhead) / totalUsers) * 100));
-            levelInfo.setPercentile(percentile);
-            response.setLevel(levelInfo);
-
-            DashboardResponse.FomoStats fomo = new DashboardResponse.FomoStats();
-            fomo.setTotalUsers(totalUsers);
-            int activeToday = rewardRepository.countActiveUsersSince(LocalDateTime.now().withHour(0).withMinute(0).withSecond(0));
-            fomo.setUsersActiveToday(activeToday);
-            String topCat = breakdown.stream()
-                    .max(Comparator.comparingDouble(DashboardResponse.CategoryBreakdown::getCarbonKg))
-                    .map(DashboardResponse.CategoryBreakdown::getCategory)
-                    .orElse("TRANSPORT");
-            fomo.setTopCategory(topCat);
-
-            if (user.getCurrentStreak() > 0 && user.getLastActivityDate() != null) {
-                long hoursSince = java.time.Duration.between(
-                        user.getLastActivityDate().atStartOfDay(), LocalDateTime.now()).toHours();
-                if (hoursSince >= 24) {
-                    fomo.setStreakDanger("⚠️ Your streak will reset! Log an activity now.");
-                }
-            }
-            response.setFomo(fomo);
+            enrichStreakInfo(response, user);
+            enrichLevelInfo(response, user, totalUsers());
+            enrichFomoStats(response, user, breakdown);
         }
 
         return response;
+    }
+
+    private void enrichStreakInfo(DashboardResponse response, User user) {
+        DashboardResponse.StreakInfo streakInfo = new DashboardResponse.StreakInfo();
+        streakInfo.setCurrentStreak(user.getCurrentStreak());
+        streakInfo.setLongestStreak(user.getLongestStreak());
+        streakInfo.setPointsMultiplier(RewardService.getStreakMultiplier(user.getCurrentStreak()));
+        streakInfo.setLabel(RewardService.getStreakLabel(user.getCurrentStreak()));
+        response.setStreak(streakInfo);
+    }
+
+    private void enrichLevelInfo(DashboardResponse response, User user, int totalUsers) {
+        DashboardResponse.LevelInfo levelInfo = new DashboardResponse.LevelInfo();
+        int level = RewardService.getLevelForPoints(user.getTotalPoints());
+        levelInfo.setLevel(level);
+        levelInfo.setTitle(RewardService.getLevelTitle(level));
+        levelInfo.setIcon(RewardService.getLevelIcon(level));
+        levelInfo.setPoints(user.getTotalPoints());
+        levelInfo.setPointsToNext(RewardService.getPointsToNextLevel(user.getTotalPoints()));
+
+        int usersAhead = userRepository.countUsersWithMorePoints(user.getTotalPoints());
+        int percentile = Math.max(DEFAULT_PERCENTILE,
+                (int) Math.ceil(((double) (totalUsers - usersAhead) / totalUsers) * PERCENTAGE_MULTIPLIER));
+        levelInfo.setPercentile(percentile);
+        response.setLevel(levelInfo);
+    }
+
+    private void enrichFomoStats(DashboardResponse response, User user,
+                                 List<DashboardResponse.CategoryBreakdown> breakdown) {
+        DashboardResponse.FomoStats fomo = new DashboardResponse.FomoStats();
+        int totalUsers = totalUsers();
+        fomo.setTotalUsers(totalUsers);
+        int activeToday = rewardRepository.countActiveUsersSince(
+                LocalDateTime.now().withHour(0).withMinute(0).withSecond(0));
+        fomo.setUsersActiveToday(activeToday);
+        String topCat = breakdown.stream()
+                .max(Comparator.comparingDouble(DashboardResponse.CategoryBreakdown::getCarbonKg))
+                .map(DashboardResponse.CategoryBreakdown::getCategory)
+                .orElse(DEFAULT_TOP_CATEGORY);
+        fomo.setTopCategory(topCat);
+
+        if (user.getCurrentStreak() > 0 && user.getLastActivityDate() != null) {
+            long hoursSince = java.time.Duration.between(
+                    user.getLastActivityDate().atStartOfDay(), LocalDateTime.now()).toHours();
+            if (hoursSince >= STREAK_DANGER_HOURS) {
+                fomo.setStreakDanger("Your streak will reset! Log an activity now.");
+            }
+        }
+        response.setFomo(fomo);
+    }
+
+    private int totalUsers() {
+        return Math.max(userRepository.countTotalUsers(), 1);
     }
 }

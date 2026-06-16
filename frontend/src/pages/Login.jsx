@@ -32,42 +32,76 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-header">
-          <span className="auth-icon">🌱</span>
-          <h1>CarbonBuddy</h1>
+      <article className="auth-card" aria-labelledby="login-heading">
+        <header className="auth-header">
+          <span className="auth-icon" aria-hidden="true">🌱</span>
+          <h1 id="login-heading">CarbonBuddy</h1>
           <p>Sign in to your account</p>
-        </div>
-        {error && <div className="alert alert-error">{error}</div>}
-        <form onSubmit={handleSubmit}>
+        </header>
+        {error && (
+          <div className="alert alert-error" role="alert" aria-live="assertive">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
-            <label>Email</label>
-            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required placeholder="email@example.com" />
+            <label htmlFor="login-email">Email</label>
+            <input
+              id="login-email"
+              type="email"
+              value={form.email}
+              onChange={e => setForm({ ...form, email: e.target.value })}
+              required
+              placeholder="email@example.com"
+              autoComplete="email"
+              aria-describedby={error ? 'login-error' : undefined}
+            />
           </div>
           <div className="form-group">
-            <label>Password</label>
-            <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required placeholder="Enter password" />
+            <label htmlFor="login-password">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+              required
+              placeholder="Enter password"
+              autoComplete="current-password"
+              aria-describedby={error ? 'login-error' : undefined}
+            />
           </div>
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary btn-full"
+            disabled={loading}
+            aria-busy={loading}
+          >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        <div className="demo-section">
-          <span className="demo-label">⚡ Demo Accounts</span>
-          <div className="demo-grid">
+        <section className="demo-section" aria-labelledby="demo-label">
+          <span className="demo-label" id="demo-label">Demo Accounts</span>
+          <div className="demo-grid" role="list">
             {DEMO_USERS.map(u => (
-              <div key={u.email} className="demo-card" onClick={() => fillDemo(u)}>
+              <button
+                key={u.email}
+                className="demo-card"
+                onClick={() => fillDemo(u)}
+                type="button"
+                role="listitem"
+                aria-label={`Use demo account: ${u.name}, ${u.level} level with ${u.points} points`}
+              >
                 <div className="demo-name">{u.name}</div>
                 <div className="demo-email">{u.email}</div>
-                <div className="demo-meta">{u.level} · {u.points} 🪙</div>
-              </div>
+                <div className="demo-meta">{u.level} · {u.points} points</div>
+              </button>
             ))}
           </div>
-        </div>
-        <p className="auth-footer">
-          Don't have an account? <Link to="/register">Register</Link>
-        </p>
-      </div>
+        </section>
+        <footer className="auth-footer">
+          Don't have an account? <Link to="/register" aria-label="Go to registration page">Register</Link>
+        </footer>
+      </article>
     </div>
   )
 }

@@ -3,7 +3,13 @@ package com.carbonbuddy.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
+/**
+ * Request DTO for creating a utility bill.
+ * Validates total kWh, utility type, billing dates, and allocation count.
+ */
 public class UtilityBillRequest {
+
+    private static final int DEFAULT_ALLOCATION_COUNT = 1;
 
     @Positive(message = "Total kWh must be positive")
     private Double totalKwh;
@@ -18,7 +24,7 @@ public class UtilityBillRequest {
     private String billingEnd;
 
     @Positive(message = "Allocation count must be positive")
-    private Integer allocationCount = 1;
+    private Integer allocationCount = DEFAULT_ALLOCATION_COUNT;
 
     public Double getTotalKwh() { return totalKwh; }
     public void setTotalKwh(Double totalKwh) { this.totalKwh = totalKwh; }

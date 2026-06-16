@@ -48,45 +48,93 @@ export default function Activities() {
 
   return (
     <div className="page">
-      <h1>Log Activity</h1>
+      <h1 id="activities-heading">Log Activity</h1>
       <p className="page-desc">Record a transport trip to track your carbon footprint.</p>
 
       <div className="content-grid">
-        <div className="card">
-          <h2>New Trip</h2>
-          {error && <div className="alert alert-error">{error}</div>}
-          {result && <div className="alert alert-success">Trip logged! ID: {result.id}</div>}
-          <form onSubmit={handleSubmit}>
+        <section className="card" aria-labelledby="new-trip-heading">
+          <h2 id="new-trip-heading">New Trip</h2>
+          {error && (
+            <div className="alert alert-error" role="alert" aria-live="assertive">
+              {error}
+            </div>
+          )}
+          {result && (
+            <div className="alert alert-success" role="status" aria-live="polite">
+              Trip logged! ID: {result.id}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
-              <label>Transit Mode</label>
-              <select value={form.transitMode} onChange={e => update('transitMode', e.target.value)}>
-                {TRANSIT_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label} ({t.factor} kg/km)</option>)}
+              <label htmlFor="activity-transit">Transit Mode</label>
+              <select
+                id="activity-transit"
+                value={form.transitMode}
+                onChange={e => update('transitMode', e.target.value)}
+                aria-label="Select transit mode for your trip"
+              >
+                {TRANSIT_OPTIONS.map(t => (
+                  <option key={t.value} value={t.value}>{t.label} ({t.factor} kg/km)</option>
+                ))}
               </select>
             </div>
             <div className="form-group">
-              <label>Distance (km)</label>
-              <input type="number" step="0.1" min="0" value={form.distanceKm} onChange={e => update('distanceKm', e.target.value)} required placeholder="e.g. 12.5" />
+              <label htmlFor="activity-distance">Distance (km)</label>
+              <input
+                id="activity-distance"
+                type="number"
+                step="0.1"
+                min="0"
+                value={form.distanceKm}
+                onChange={e => update('distanceKm', e.target.value)}
+                required
+                placeholder="e.g. 12.5"
+                aria-describedby="distance-estimate"
+              />
             </div>
             <div className="form-group">
-              <label>Date & Time</label>
-              <input type="datetime-local" value={form.activityStart} onChange={e => update('activityStart', e.target.value)} />
+              <label htmlFor="activity-datetime">Date &amp; Time</label>
+              <input
+                id="activity-datetime"
+                type="datetime-local"
+                value={form.activityStart}
+                onChange={e => update('activityStart', e.target.value)}
+              />
             </div>
             <div className="form-group checkbox-group">
-              <label><input type="checkbox" checked={form.isManual} onChange={e => update('isManual', e.target.checked)} /> Manual entry (not auto-detected)</label>
+              <label htmlFor="activity-manual">
+                <input
+                  id="activity-manual"
+                  type="checkbox"
+                  checked={form.isManual}
+                  onChange={e => update('isManual', e.target.checked)}
+                />
+                Manual entry (not auto-detected)
+              </label>
             </div>
-            <div className="carbon-estimate">
+            <div className="carbon-estimate" id="distance-estimate" aria-live="polite">
               Estimated CO₂: <strong>{estimatedCarbon} kg</strong>
             </div>
-            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={loading}
+              aria-busy={loading}
+            >
               {loading ? 'Logging...' : 'Log Activity'}
             </button>
           </form>
-        </div>
+        </section>
 
-        <div className="card">
-          <h2>Emission Factors</h2>
-          <table className="factor-table">
-            <thead><tr><th>Mode</th><th>kg CO₂/km</th></tr></thead>
+        <section className="card" aria-labelledby="factors-heading">
+          <h2 id="factors-heading">Emission Factors</h2>
+          <table className="factor-table" aria-label="Emission factors by transit mode">
+            <thead>
+              <tr>
+                <th scope="col">Mode</th>
+                <th scope="col">kg CO₂/km</th>
+              </tr>
+            </thead>
             <tbody>
               {TRANSIT_OPTIONS.map(t => (
                 <tr key={t.value} className={t.factor === 0 ? 'zero-emission' : ''}>
@@ -96,7 +144,7 @@ export default function Activities() {
               ))}
             </tbody>
           </table>
-        </div>
+        </section>
       </div>
     </div>
   )

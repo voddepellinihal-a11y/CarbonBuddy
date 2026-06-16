@@ -1,32 +1,48 @@
 package com.carbonbuddy.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing a utility bill (e.g. electricity).
+ * Stores consumption data and allocation count for per-person carbon computation.
+ */
 @Entity
 @Table(name = "utility_bills")
 public class UtilityBill {
+
+    private static final int MAX_UTILITY_TYPE_LENGTH = 50;
+    private static final int MAX_STATUS_LENGTH = 20;
+    private static final int DEFAULT_ALLOCATION_COUNT = 1;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(nullable = false)
     private Long userId;
 
+    @Positive(message = "Total kWh must be positive")
     private Double totalKwh;
 
-    @Column(length = 50)
+    @Size(max = MAX_UTILITY_TYPE_LENGTH)
+    @Column(length = MAX_UTILITY_TYPE_LENGTH)
     private String utilityType;
 
     private LocalDate billingStart;
 
     private LocalDate billingEnd;
 
-    private Integer allocationCount = 1;
+    @Positive(message = "Allocation count must be positive")
+    private Integer allocationCount = DEFAULT_ALLOCATION_COUNT;
 
-    @Column(length = 20)
+    @Size(max = MAX_STATUS_LENGTH)
+    @Column(length = MAX_STATUS_LENGTH)
     private String status;
 
     @Column(columnDefinition = "TEXT")

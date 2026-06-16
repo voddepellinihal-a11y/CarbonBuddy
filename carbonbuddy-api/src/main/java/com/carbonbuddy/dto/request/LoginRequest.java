@@ -3,12 +3,17 @@ package com.carbonbuddy.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * Request DTO for user login.
+ * Validates email format and password presence.
+ */
 public class LoginRequest {
 
-    @NotBlank @Email
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank
+    @NotBlank(message = "Password is required")
     private String password;
 
     public String getEmail() { return email; }
